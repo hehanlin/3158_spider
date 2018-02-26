@@ -7,7 +7,8 @@ from scrapy import cmdline
 
 
 def test():
-    cmdline.execute("scrapy crawl index".split())
+    # cmdline.execute("scrapy crawl index".split())
+    cmdline.execute("scrapy crawl category".split())
 
 
 if __name__ == "__main__":

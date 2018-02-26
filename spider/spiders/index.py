@@ -3,6 +3,7 @@ import scrapy
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
 from spider.items import DetailItem
+from re import compile, S
 
 
 class IndexSpider(CrawlSpider):
@@ -11,8 +12,22 @@ class IndexSpider(CrawlSpider):
     start_urls = ['http://www.3158.cn/']
 
     rules = (
-        Rule(LinkExtractor(allow=r'www.3158.cn/corpname/.*'), callback='parse_corp', follow=True),
+        Rule(LinkExtractor(allow=r'www\.3158\.cn/corpname/.*'), callback='parse_corp', follow=True),
+        Rule(LinkExtractor(allow=r'www\.3158\.cn/xiangmu/\d+/xmjs\.html'), callback='parse_detail', follow=True),
+        Rule(LinkExtractor(), callback='parse_follow', follow=True)
     )
+
+    def parse_follow(self, response):
+        hrefs = response.xpath("//a/@href").extract()
+        corp_reg = compile(r'www\.3158\.cn/corpname/.*', S)
+        detail_reg = compile(r'www\.3158\.cn/xiangmu/\d+/xmjs\.html', S)
+        for each in hrefs:
+            if corp_reg.search(each):
+                yield scrapy.Request(url=response.urljoin(each), callback=self.parse_corp)
+            elif detail_reg.search(each):
+                yield scrapy.Request(url=response.urljoin(each), callback=self.parse_detail)
+            else:
+                yield scrapy.Request(url=response.urljoin(each), callback=self.parse_follow)
 
     def parse_corp(self, response):
         # 项目详情url
